@@ -1,0 +1,4 @@
+eval `ssh-agent`
+ssh-add id_student -> student1
+
+ansible-playbook -i hosts.ini install_wordpress.yml
