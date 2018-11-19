@@ -1,0 +1,7 @@
+---
+- hosts: wordpress_nodes
+  become: yes
+  vars:
+    wordpress_path: /var/www/wordpress
+  tasks:
+  - include_tasks: tasks/os-dependencies.yml
