@@ -3,5 +3,6 @@
   become: yes
   vars:
     wordpress_path: /var/www/wordpress
+    project_name: MyProject
   tasks:
   - include_tasks: tasks/os-dependencies.yml

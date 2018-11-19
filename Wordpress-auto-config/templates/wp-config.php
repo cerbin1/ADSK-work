@@ -1,6 +1,6 @@
 <?php
 
-define('DB_NAME', 'hello_db');
+define('DB_NAME', 'MyProject');
 
 /** MySQL database username */
 define('DB_USER', 'root');
