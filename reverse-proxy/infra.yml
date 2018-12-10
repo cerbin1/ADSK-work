@@ -1,0 +1,14 @@
+---
+- hosts: app_nodes
+  become: yes
+  tasks:
+    - yum:
+        name: httpd
+        state: present
+    - service:
+        name: httpd
+        state: started
+- hosts: proxy_nodes
+  tasks:
+    - debug:
+        msg: "dziala"
