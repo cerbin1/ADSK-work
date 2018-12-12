@@ -1,4 +1,17 @@
+# create instance of server on aws
+ - Change location to Frankfurt -> Instances -> Create -> Choose second, micro -> add tag name (server name) -> Existing TODO: finish this
+
+# add private key
 eval `ssh-agent`
 ssh-add id_student -> student1
 
+# running ansible playbook
 ansible-playbook -i hosts.ini install_wordpress.yml
+
+# 3 servers - specification
+ss1-web-nodes - apache + wordpress + telegraf
+ss2-db-nodes - mongodb
+ss3-stats_nodes - displaying graphs with statistics
+
+# install ansible role mysql to directory /roles
+ansible-galaxy install geerlingguy.mysql -p /roles
