@@ -1,6 +1,6 @@
 <?php
 
-define('DB_NAME', 'MyProject');
+define('DB_NAME', 'wordpress-db');
 
 /** MySQL database username */
 define('DB_USER', 'root');

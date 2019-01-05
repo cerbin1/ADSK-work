@@ -1,9 +1,35 @@
 # create instance of server on aws
- - Change location to Frankfurt -> Instances -> Create -> Choose second, micro -> add tag name (server name) -> Existing TODO: finish this
+ - Change location to Frankfurt -> Instances -> Create -> Choose Amazon Machine Image 1 -> Choose second Instance Type, micro -> add tag Name (server name) -> Select Existing Security Group, choose last, students -> Launch, check selecting key pair
 
 # add private key
-eval `ssh-agent`
-ssh-add id_student -> student1
+copy password to file or use wget
+chmod 600 id_student
+eval `ssh-agent` // set environment variables, allows to use ssh-add permanently for ssh-agent session
+ssh-add id_student -> student1 // adds private key to the authentication agent, so no needing to enter any password when connecting to server
+Login:
+ssh ec2-user@public_ip
+{{ec2-201094}}
+
+# manual php installation
+sudo/sudo su
+sudo yum install httpd
+sudo yum install php
+sudo yum install php-mysql
+sudo yum install mariadb-server
+sudo systemctl start httpd
+sudo systemctl start mariadb
+mysql -u root // -> create database for wordpress
+cd /var/www/html/
+sudo wget https://wordpress.org/latest.zip
+sudo unzip latest.zip
+go to public ipv4 -> configure wordpress
+edit wordpress wp-config.php (database - created, user - root, password - '', host - localhost)
+
+// TODO
+cd /etc/httpd/
+sudo conf.d
+sudo vi wordpress.conf
+sudo systemctl restart httpd
 
 # running ansible playbook
 ansible-playbook -i hosts.ini install_wordpress.yml
@@ -15,3 +41,16 @@ ss3-stats_nodes - displaying graphs with statistics
 
 # install ansible role mysql to directory /roles
 ansible-galaxy install geerlingguy.mysql -p /roles
+
+# nginx reverse proxy
+set up machine, connect with it
+run first command from here: https://aws.amazon.com/premiumsupport/knowledge-center/ec2-enable-epel/
+sudo yum install nginx
+sudo systemctl restart nginx
+set file /etc/nginx/nginx.conf:
+listen: 80;
+server_name bporebski.name.edu-cloud.uek.krakow.pl;
+root /var/www/html;
+
+in /var/www/html create index.html and write hello world
+sudo systemctl restart nginx
