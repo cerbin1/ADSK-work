@@ -54,3 +54,46 @@ root /var/www/html;
 
 in /var/www/html create index.html and write hello world
 sudo systemctl restart nginx
+
+TODO: stats.yml
+---
+- hosts: metrics_source
+  become: yes
+  vars:
+    telegraf_url: https://dl.influxdata.com/telegraf/releases/telegraf-1.8.3-1.x86_64.rpm
+    metrics_storage_ip: 172.31.16.28
+  tasks:
+    - name: "Install telegraf"
+      yum:
+        name: "{{telegraf_url}}"
+        state: present
+    - copy:
+        src: templates/telegraf.conf
+        dest: /etc/telegraf/telegraf.conf
+    - service:
+        name: telegraf
+        state: restarted
+
+- hosts: metrics_storage
+  become: yes
+  vars:
+    influxdb_url: https://dl.influxdata.com/influxdb/releases/influxdb-1.7.1.x86_64.rpm
+  tasks:
+    - yum:
+        name: "{{influxdb_url}}"
+        state: present
+    - service:
+        name: influxdb
+        state: restarted
+
+- hosts: metrics_visualization
+  become: yes
+  vars:
+    grafana_url: https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana-5.3.4-1.x86_64.rpm
+  tasks:
+    - yum:
+        name: "{{grafana_url}}"
+        state: present
+    - service:
+        name: grafana-server
+        state: restarted

@@ -1,0 +1,30 @@
+---
+- hosts: imageMe
+  become: yes
+  vars:
+    google_api_key: "AIzaSyDLLC1pqOxkWA8jUjM-Cfwbl_13Sh_2t98"
+    search_id: "006879359584856769921:rplfy3clmho"
+  tasks:
+    - name: "Install git"
+      yum: 
+       name: git
+       state: present
+      with_items: git
+    - name: "Download repository"
+      git: 
+       repo: https://github.com/jkanclerz/google-search-python.git
+       dest: /home/ec2-user/google-search-python
+    - name: "Set 1st variable"
+      shell: echo "export SEARCH_ENGINE_ID={{search_id}}" >> .bashrc
+    - name: "Set 2nd variable"
+      shell: echo "export GOOGLE_CLOUD_API_KEY={{google_api_key}}" >> .bashrc  
+    - name: "Create directory"
+      file:
+       path:  bin
+       state: directory
+    - name: "Copy script"
+      copy:
+       src: ./scripts/image.sh
+       dest: bin/imageMe
+    - name: "Set image_me"
+      command: "chmod +x bin/imageMe"
