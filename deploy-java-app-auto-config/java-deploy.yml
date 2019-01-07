@@ -1,0 +1,32 @@
+---
+- hosts: application_nodes
+  become: yes
+  vars:
+    jar_location: /home/bartek/IdeaProjects/rental-app/target/rental-app-0.0.1-SNAPSHOT.jar
+    app_location: /opt/rentalapp/rentalapp.jar
+    app_user: rentalapp
+  tasks:
+    - name: "install jre"
+      yum:
+        name: java-1.8.0-openjdk
+        state: present
+    - name: "create path"
+      file:
+        path: /opt/rentalapp
+        state: directory
+    - name: "copy .jar to remote machine"
+      copy:
+        src: "{{jar_location}}"
+        dest: "{{app_location}}"
+    - name: "create user for service"
+      user:
+        name: "{{app_user}}"
+    - name: "copy systemd config"
+      template:
+        src: template/rentalapp.service
+        dest: /etc/systemd/system/rentalapp.service
+    - name: "start service"
+      systemd:
+        name: "rentalapp.service"
+        daemon_reload: yes
+        state: restarted
