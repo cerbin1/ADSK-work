@@ -8,8 +8,21 @@
     - service:
         name: httpd
         state: started
+
 - hosts: proxy_nodes
+  become: yes
   tasks:
     - yum:
-       name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-       state: present
+        name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+        state: present
+    - name: Install nginx web server
+      yum:
+        name: nginx
+        state: present
+    - name: Add nginx.conf file
+      template:
+        src: template/temp_nginx.conf
+        dest: /etc/nginx/conf.d/my_nginx.conf
+    - service:
+        name: nginx
+        state: restarted
