@@ -1,36 +1,50 @@
 ---
+# Install application and telegraf
 - hosts: application_nodes
   become: yes
   vars:
     jar_location: /home/bartek/IdeaProjects/car-rental-app/target/rental-app-0.0.1-SNAPSHOT.jar
     app_location: /opt/rentalapp/rentalapp.jar
     app_user: rentalapp
+    metrics_storage_ip: 172.31.23.78
   tasks:
-    - name: "install jre"
-      yum:
-        name: java-1.8.0-openjdk
-        state: present
-    - name: "create path"
-      file:
-        path: /opt/rentalapp
-        state: directory
-    - name: "copy .jar to remote machine"
-      copy:
-        src: "{{jar_location}}"
-        dest: "{{app_location}}"
-    - name: "create user for service"
-      user:
-        name: "{{app_user}}"
-    - name: "copy systemd config"
-      template:
-        src: template/rentalapp.service
-        dest: /etc/systemd/system/rentalapp.service
-    - name: "start service"
-      systemd:
-        name: "rentalapp.service"
-        daemon_reload: yes
-        state: restarted
+  - name: "install jre"
+    yum:
+      name: java-1.8.0-openjdk
+      state: present
+  - name: "create path"
+    file:
+      path: /opt/rentalapp
+      state: directory
+  - name: "copy .jar to remote machine"
+    copy:
+      src: "{{jar_location}}"
+      dest: "{{app_location}}"
+  - name: "create user for service"
+    user:
+      name: "{{app_user}}"
+  - name: "copy systemd config"
+    template:
+      src: template/rentalapp.service
+      dest: /etc/systemd/system/rentalapp.service
+  - name: "start service"
+    systemd:
+      name: "rentalapp.service"
+      daemon_reload: yes
+      enabled: yes #TODO: ask
+      state: restarted
+  - name: "install telegraf"
+    yum:
+      name: https://dl.influxdata.com/telegraf/releases/telegraf-1.8.3-1.x86_64.rpm
+      state: present
+  - template:
+      src: template/telegraf.conf
+      dest: /etc/telegraf/telegraf.conf
+  - service:
+      name: telegraf
+      state: restarted
 
+# Install load balancer and ssl
 - hosts: proxy_nodes
   become: yes
   vars:
@@ -54,4 +68,106 @@
   - yum:
       name: python2-certbot-nginx
       state: present
-  - shell: "sudo certbot -i nginx -d '{{domain}}' --nginx -m '{{email}}' --agree-tos --redirect"
+  - name: "Install certificate"
+    shell: "sudo certbot -i nginx -d '{{domain}}' --nginx -m '{{email}}' --agree-tos --redirect"
+#    command: certbot -i nginx -d '{{domain}}' --nginx -m '{{email}}' --agree-tos --redirect
+
+# Install influxdb and Grafana
+- hosts: metrics_storage
+  become: yes
+  tasks:
+  - yum:
+      name: https://dl.influxdata.com/influxdb/releases/influxdb-1.7.1.x86_64.rpm
+      state: present
+  - service:
+      name: influxdb
+      state: restarted
+  - name: "create database metrics in influxdb "
+    shell: "curl -i -XPOST http://localhost:8086/query --data-urlencode 'q=CREATE DATABASE metrics'"
+  - name: "install grafana"
+    yum:
+      name: https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana-5.3.4-1.x86_64.rpm
+      state: present
+  - name: "Restart Grafana"
+    service:
+      name: grafana-server
+      state: restarted
+  - name: "Create influxdb datasource"
+    grafana_datasource:
+      name: "my_influx"
+      grafana_url: "http://localhost:3000"
+      grafana_user: "admin"
+      grafana_password: "admin"
+      org_id: "1"
+      ds_type: "influxdb"
+      url: "http://localhost:8086"
+      database: "metrics"
+
+
+# Install mongodb
+- hosts: app_database
+  become: yes
+  tasks:
+  - copy:
+      src: template/mongodb-org-4.0.repo
+      dest: /etc/yum.repos.d/mongodb-org-4.0.repo
+  - yum:
+      name: mongodb-org
+      state: present
+  - service: name=mongod state=started
+  # - copy:
+  #     src: template/get-pip.py
+  #     dest: /tmp/get-pip.py
+  # - name: install scprit
+  #   command: python  /tmp/get-pip.py
+  # - package:
+  #     name: python-pip
+  #     state: latest
+  - easy_install:
+      name: pip
+      state: latest
+  -  pip: name=pymongo state=latest use_mirrors=no
+  - mongodb_user:
+      login_port: 27017
+      name: admin
+      password: admin
+      database: mongo
+      state: present
+      roles: root
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# TODO: for dashboard
+#   - name: "create path"
+#     file:
+#       path: /temp
+#       state: directory
+#   - name: Copy grafana dashboard
+#     copy:
+#       src: dashboard/system_load.json
+#       dest: /tmp/my_dashboard.json
+#   - name: Import Grafana dashboard
+#     grafana_dashboard:
+#       grafana_url: "http://localhost:3000"
+#       grafana_user: "admin"
+#       grafana_password: "admin"
+#       state: present
+#       message: Updated by ansible
+#       overwrite: yes
+#       path: /tmp/my_dashboard.json
