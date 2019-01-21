@@ -14,8 +14,8 @@
   service:
     name: nginx
     state: restarted
-#  - yum:
-#      name: python2-certbot-nginx2
-#      state: present
-#  - name: "Install certificate"
-#    command: certbot -i nginx -d '{{domain}}' --nginx -m '{{email}}' --agree-tos --redirect
+  - yum:
+      name: python2-certbot-nginx2
+      state: present
+  - name: "Install certificate"
+    command: certbot -i nginx -d '{{domain}}' --nginx -m '{{email}}' --agree-tos --redirect
