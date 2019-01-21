@@ -1,0 +1,125 @@
+---
+- hosts: web_nodes
+  become: yes
+  vars:
+    metrics_storage_ip: 172.31.28.85
+    db_ip: 172.31.23.7
+  tasks:
+  - name: "Install apache server"
+    yum:
+      name: httpd
+      state: latest
+  - name: "Install php"
+    yum:
+      name: "{{packages}}"
+      state: latest
+    vars:
+      packages:
+      - php-mysql
+      - php
+  - name: "Download wp"
+    get_url:
+      url: https://wordpress.org/latest.zip
+      dest: /tmp/wordpress.zip
+  - name: "Unarchive wp to destination"
+    unarchive:
+      src: /tmp/wordpress.zip
+      dest: /var/www
+      remote_src: yes
+  - name: "Put apache config to the right place"
+    copy:
+      src: ./templates/blog.conf
+      dest: /etc/httpd/conf.d/blog.conf
+  - name: "Start service httpd, if not started"
+    service:
+      name: httpd
+      state: restarted
+  - name: "Copy wp-config"
+    template:
+      src: ./templates/wp-config.php
+      dest: /var/www/wordpress/wp-config.php
+  - name: "install telegraph"
+    yum:
+      name: https://dl.influxdata.com/telegraf/releases/telegraf-1.8.3-1.x86_64.rpm
+      state: present
+  - template:
+      src: templates/telegraf.conf
+      dest: /etc/telegraf/telegraf.conf
+  - service:
+      name: telegraf
+      state: restarted
+
+- hosts: db_nodes
+  become: yes
+  tasks:
+  - name: "Install my-sqls"
+    yum:
+      name: "{{packages}}"
+      state: present
+    vars:
+      packages:
+      - mariadb
+      - mariadb-server
+      - MySQL-python
+  - name: "Start service mariadb, if not started"
+    service:
+      name: mariadb
+      state: started
+  - name: "Create database named wp_database"
+    mysql_db:
+      name: wp_database
+      state: present
+  - mysql_user:
+      name: root
+      password:
+      priv: '*.*:ALL'
+      host: '%'
+      state: present
+
+- hosts: stats_nodes
+  become: yes
+  tasks:
+  - yum:
+      name: https://dl.influxdata.com/influxdb/releases/influxdb-1.7.1.x86_64.rpm
+      state: present
+  - service:
+      name: influxdb
+      state: restarted
+  - name: "setup database on influxdb"
+    shell: "curl -i -XPOST http://localhost:8086/query --data-urlencode 'q=CREATE DATABASE metrics'"
+  - name: "Restart influxdb"
+    service:
+      name: influxdb
+      state: restarted
+  - name: "install grafana"
+    yum:
+      name: https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana-5.3.4-1.x86_64.rpm
+      state: present
+  - template:
+      src: templates/grafana.ini
+      dest: /etc/grafana/grafana.ini
+  - service:
+      name: grafana-server
+      state: restarted
+  - name: Create influxdb datasource
+    grafana_datasource:
+      name: "my_influx"
+      grafana_url: "http://127.0.0.1:8080"
+      grafana_user: "admin"
+      grafana_password: "admin"
+      org_id: "1"
+      ds_type: "influxdb"
+      url: "http://localhost:8086"
+      database: "metrics"
+  - copy:
+      src: dashboard/system_load.json
+      dest: /tmp/my_dashboard.json
+  - name: Import Grafana dashboard
+    grafana_dashboard:
+      grafana_url: "http://127.0.0.1:8080"
+      grafana_user: "admin"
+      grafana_password: "admin"
+      state: present
+      message: Updated by ansible
+      overwrite: yes
+      path: /tmp/my_dashboard.json
