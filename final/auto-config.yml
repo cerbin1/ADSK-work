@@ -6,6 +6,7 @@
     jar_location: /opt/temp/target/rental-app-0.0.1-SNAPSHOT.jar
     app_location: /opt/car-rental-app/car-rental-app.jar
     app_user: rentalapp
+    repository_url: https://github.com/cerbin1/car-rental-app.git
     metrics_storage_ip: 172.31.23.78
   tasks:
     - include_tasks: tasks/application.yml

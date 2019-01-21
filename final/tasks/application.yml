@@ -9,7 +9,7 @@
   with_items: git
 - name: "download git repository"
   git:
-    repo: https://github.com/cerbin1/car-rental-app.git
+    repo: {{repository_url}}
     dest: /opt/temp
 - name: "install maven"
   yum:
