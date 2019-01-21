@@ -1,0 +1,28 @@
+- name: "install influxdb"
+  yum:
+    name: https://dl.influxdata.com/influxdb/releases/influxdb-1.7.1.x86_64.rpm
+    state: present
+- name: "start influxdb"
+  service:
+    name: influxdb
+    state: restarted
+- name: "create database metrics in influxdb"
+  shell: "curl -i -XPOST http://localhost:8086/query --data-urlencode 'q=CREATE DATABASE metrics'"
+- name: "install grafana"
+  yum:
+    name: https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana-5.3.4-1.x86_64.rpm
+    state: present
+- name: "restart grafana"
+  service:
+    name: grafana-server
+    state: restarted
+- name: "create grafana datasource"
+  grafana_datasource:
+    name: "my_influx"
+    grafana_url: "http://localhost:3000"
+    grafana_user: "admin"
+    grafana_password: "admin"
+    org_id: "1"
+    ds_type: "influxdb"
+    url: "http://localhost:8086"
+    database: "metrics"

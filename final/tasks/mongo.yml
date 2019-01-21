@@ -1,0 +1,23 @@
+- name: "copy mongodb repo"
+  copy:
+    src: template/mongodb-org-4.0.repo
+    dest: /etc/yum.repos.d/mongodb-org-4.0.repo
+- name: "install mongodb"
+  yum:
+    name: mongodb-org
+    state: present
+- name: "start mongodb"
+  service: name=mongod state=started
+- name: "install python-pip"
+  package:
+    name: python-pip
+    state: latest
+- name: "install mongodb"
+  pip: name=pymongo state=latest use_mirrors=no
+- name: "create user and database"
+  mongodb_user:
+    database: admin
+    name: admin
+    password: admin
+    state: present
+    roles: root

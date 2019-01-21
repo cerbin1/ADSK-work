@@ -1,0 +1,52 @@
+- name: "install java 8"
+  yum:
+    name: java-1.8.0-openjdk
+    state: present
+- name: "install git"
+  yum:
+    name: git
+    state: present
+  with_items: git
+- name: "download git repository"
+  git:
+    repo: https://github.com/cerbin1/car-rental-app.git
+    dest: /opt/temp
+- name: "install maven"
+  yum:
+    name: maven
+    state: present
+- name: "generate jar for application"
+  command: chdir=/opt/temp mvn package
+- name: "create directory for application"
+  file:
+    path: /opt/car-rental-app
+    state: directory
+- name: "copy jar with application to specific location"
+  copy:
+    remote_src: yes
+    src: "{{jar_location}}"
+    dest: "{{app_location}}"
+- name: "create user for service"
+  user:
+    name: "{{app_user}}"
+- name: "copy application config file"
+  template:
+    src: template/rentalapp.service
+    dest: /etc/systemd/system/rentalapp.service
+- name: "start service"
+  systemd:
+    name: "rentalapp.service"
+    daemon_reload: yes
+    state: restarted
+- name: "install telegraf"
+  yum:
+    name: https://dl.influxdata.com/telegraf/releases/telegraf-1.8.3-1.x86_64.rpm
+    state: present
+- name: "copy telegraf configuration"
+  template:
+    src: template/telegraf.conf
+    dest: /etc/telegraf/telegraf.conf
+- name: "restart telegraf"
+  service:
+    name: telegraf
+    state: restarted

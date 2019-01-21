@@ -1,0 +1,21 @@
+- name: "install epel"
+  yum:
+    name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    state: present
+- name: "install nginx"
+  yum:
+    name: nginx
+    state: present
+- name: "add nginx.conf file"
+  template:
+    src: template/temp_nginx.conf
+    dest: /etc/nginx/conf.d/my_nginx.conf
+- name: "start nginx"
+  service:
+    name: nginx
+    state: restarted
+#  - yum:
+#      name: python2-certbot-nginx2
+#      state: present
+#  - name: "Install certificate"
+#    command: certbot -i nginx -d '{{domain}}' --nginx -m '{{email}}' --agree-tos --redirect

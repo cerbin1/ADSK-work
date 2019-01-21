@@ -55,48 +55,6 @@ root /var/www/html;
 in /var/www/html create index.html and write hello world
 sudo systemctl restart nginx
 
-TODO: stats.yml
----
-- hosts: metrics_source
-  become: yes
-  vars:
-    telegraf_url: https://dl.influxdata.com/telegraf/releases/telegraf-1.8.3-1.x86_64.rpm
-    metrics_storage_ip: 172.31.16.28
-  tasks:
-    - name: "Install telegraf"
-      yum:
-        name: "{{telegraf_url}}"
-        state: present
-    - copy:
-        src: templates/telegraf.conf
-        dest: /etc/telegraf/telegraf.conf
-    - service:
-        name: telegraf
-        state: restarted
-
-- hosts: metrics_storage
-  become: yes
-  vars:
-    influxdb_url: https://dl.influxdata.com/influxdb/releases/influxdb-1.7.1.x86_64.rpm
-  tasks:
-    - yum:
-        name: "{{influxdb_url}}"
-        state: present
-    - service:
-        name: influxdb
-        state: restarted
-
-- hosts: metrics_visualization
-  become: yes
-  vars:
-    grafana_url: https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana-5.3.4-1.x86_64.rpm
-  tasks:
-    - yum:
-        name: "{{grafana_url}}"
-        state: present
-    - service:
-        name: grafana-server
-        state: restarted
 
 Final notes:
 # SSL with own domain
@@ -116,58 +74,3 @@ metrics_storage - prywatne ip serwera gdzie jest influxdb
 
 o8785262@nwytg.net
 asdasdasdasd
-
-TODO: dac wszedzie name do tasków
- TODO: add loadbalancer
-
-_______________________
-From git directly:
----
-- hosts: application_nodes
-  become: yes
-  vars:
-    jar_location: /opt/temp/target/rental-app-0.0.1-SNAPSHOT.jar
-    app_location: /opt/car-rental-app/car-rental-app.jar
-    app_user: rentalapp
-  tasks:
-  - name: "install jre"
-    yum:
-      name: java-1.8.0-openjdk
-      state: present
-  - name: "Install git"
-    yum:
-      name: git
-      state: present
-    with_items: git
-  - name: "Download repository"
-    git:
-      repo: https://github.com/cerbin1/car-rental-app.git
-      dest: /opt/temp
-  - name: "Install maven"
-    yum:
-      name: maven
-      state: present
-  - name: "Generate jar for application"
-    command: chdir=/opt/temp mvn package
-  - name: "create path"
-    file:
-      path: /opt/car-rental-app
-      state: directory
-  - name: "copy .jar to specific location"
-    copy:
-      remote_src: yes
-      src: "{{jar_location}}"
-      dest: "{{app_location}}"
-  - name: "create user for service"
-    user:
-      name: "{{app_user}}"
-  - name: "copy systemd config"
-    template:
-      src: template/rentalapp.service
-      dest: /etc/systemd/system/rentalapp.service
-  - name: "start service"
-    systemd:
-      name: "rentalapp.service"
-      daemon_reload: yes
-      state: restarted
-_____________________________
